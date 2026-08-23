@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billing WiFi</title>
+<style>
+  :root{
+    --primary:#4f46e5;
+    --primary-dark:#4338ca;
+    --primary-light:#eef2ff;
+    --success:#16a34a;
+    --success-light:#dcfce7;
+    --danger:#dc2626;
+    --danger-light:#fee2e2;
+    --warning:#d97706;
+    --warning-light:#fef3c7;
+    --bg:#f1f5f9;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --radius:12px;
+    --shadow:0 1px 3px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.05);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+  .app{display:flex;min-height:100vh}
+
+  .sidebar{width:240px;background:#111827;color:#cbd5e1;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50}
+  .logo{display:flex;align-items:center;gap:10px;padding:20px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .logo span:first-child{font-size:26px}
+  .logo b{color:#fff;font-size:17px;display:block}
+  .logo small{font-size:11px;color:#94a3b8}
+  .nav{flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:4px}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;transition:.15s;border:none;background:none;color:#cbd5e1;text-align:left;width:100%}
+  .nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+  .nav-item.active{background:var(--primary);color:#fff}
+  .nav-item .ico{font-size:17px;width:22px;text-align:center}
+  .sidebar-footer{padding:14px;border-top:1px solid rgba(255,255,255,.08)}
+  .reset-btn{background:none;border:none;color:#94a3b8;font-size:11.5px;cursor:pointer;padding:6px;width:100%;border-radius:8px}
+  .reset-btn:hover{color:#f87171;background:rgba(239,68,68,.1)}
+
+  .main{flex:1;margin-left:240px;padding:24px 28px;max-width:1200px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:12px;flex-wrap:wrap}
+  .topbar h1{font-size:21px}
+  .topbar p{font-size:13px;color:var(--muted);margin-top:2px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:22px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px}
+  .stat-card{display:flex;gap:14px;align-items:center}
+  .stat-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+  .ic-indigo{background:var(--primary-light)} .ic-green{background:var(--success-light)}
+  .ic-red{background:var(--danger-light)} .ic-amber{background:var(--warning-light)}
+  .stat-card h3{font-size:22px;margin-top:2px}
+  .stat-card p{font-size:12.5px;color:var(--muted)}
+
+  .panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:20px}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .panel-head h2{font-size:15.5px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+  .btn{border:none;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px;font-family:inherit}
+  .btn-primary{background:var(--primary);color:#fff} .btn-primary:hover{background:var(--primary-dark)}
+  .btn-outline{background:#fff;border:1px solid var(--border);color:var(--text)} .btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+  .btn-success{background:var(--success);color:#fff} .btn-success:hover{filter:brightness(.92)}
+  .btn-danger{background:var(--danger);color:#fff} .btn-danger:hover{filter:brightness(.92)}
+  .btn-wa{background:#25d366;color:#fff} .btn-wa:hover{filter:brightness(.93)}
+  .btn-sm{padding:5px 10px;font-size:12px;border-radius:7px}
+  .icon-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;border-radius:6px}
+  .icon-btn:hover{background:var(--bg)}
+
+  input,select,textarea{font-family:inherit;font-size:13.5px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:#fff;color:var(--text);outline:none;transition:.15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+  .form-group textarea{width:100%;resize:vertical;line-height:1.6}
+  label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;padding:10px 12px;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid var(--border);white-space:nowrap}
+  td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#f8fafc}
+  td .sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+  .badge{display:inline-block;padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:700}
+  .badge-lunas{background:var(--success-light);color:var(--success)}
+  .badge-belum{background:var(--danger-light);color:var(--danger)}
+  .badge-tempo{background:var(--warning-light);color:var(--warning)}
+  .badge-off{background:var(--bg);color:var(--muted)}
+
+  .empty{padding:44px 20px;text-align:center;color:var(--muted);font-size:14px}
+  .empty span{font-size:34px;display:block;margin-bottom:8px}
+
+  .chart{display:flex;align-items:flex-end;gap:14px;height:170px;padding-top:10px}
+  .bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+  .bar-val{font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .bar{width:100%;max-width:52px;background:linear-gradient(180deg,#6366f1,#4f46e5);border-radius:7px 7px 3px 3px;min-height:4px;transition:.3s}
+  .bar-label{font-size:11px;color:var(--muted);white-space:nowrap}
+
+  .overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .hidden{display:none!important}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:440px;max-height:92vh;overflow:auto;padding:24px;animation:pop .18s ease}
+  @keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal h3{font-size:16.5px;margin-bottom:18px}
+  .form-group{margin-bottom:14px}
+  .form-group input,.form-group select{width:100%}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .confirm-text{font-size:14px;color:var(--text);line-height:1.55}
+
+  .receipt{font-family:"SF Mono",Menlo,monospace;font-size:12.5px;line-height:1.7}
+  .receipt h4{text-align:center;font-size:15px;margin-bottom:2px}
+  .receipt .rc-sub{text-align:center;color:var(--muted);font-size:11px;margin-bottom:12px}
+  .receipt hr{border:none;border-top:1px dashed #cbd5e1;margin:10px 0}
+  .receipt .row{display:flex;justify-content:space-between;gap:10px}
+  .receipt .total{font-weight:800;font-size:14px}
+
+  .toast{position:fixed;top:18px;right:18px;z-index:200;background:#111827;color:#fff;padding:12px 18px;border-radius:11px;font-size:13.5px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.25);animation:slide .25s ease;max-width:340px}
+  @keyframes slide{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+
+  .actions-cell{white-space:nowrap}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+
+  @media(max-width:900px){
+    .sidebar{width:64px}
+    .sidebar .logo b,.sidebar .logo small,.nav-item span.txt,.sidebar-footer{display:none}
+    .logo{justify-content:center;padding:16px 8px}
+    .main{margin-left:64px;padding:18px}
+    .table-scroll{overflow-x:auto}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <span>🛜</span>
+      <div><b>WiFi Billing</b><small>Sistem Tagihan Internet</small></div>
+    </div>
+    <nav class="nav">
+      <button class="nav-item active" data-page="dashboard" onclick="goPage('dashboard')"><span class="ico">📊</span><span class="txt">Dashboard</span></button>
+      <button class="nav-item" data-page="pelanggan" onclick="goPage('pelanggan')"><span class="ico">👥</span><span class="txt">Pelanggan</span></button>
+      <button class="nav-item" data-page="paket" onclick="goPage('paket')"><span class="ico">📦</span><span class="txt">Paket</span></button>
+      <button class="nav-item" data-page="tagihan" onclick="goPage('tagihan')"><span class="ico">🧾</span><span class="txt">Tagihan</span></button>
+      <button class="nav-item" data-page="riwayat" onclick="goPage('riwayat')"><span class="ico">💰</span><span class="txt">Riwayat Bayar</span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="reset-btn" onclick="formWaSetting()" style="color:#a5b4fc">⚙️ Setting WA Gateway</button>
+      <button class="reset-btn" onclick="askConfirm('Hapus semua data dan kembalikan ke data contoh?', resetAll)">↺ Reset Data Contoh</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div><h1 id="pageTitle">Dashboard</h1><p id="pageSub"></p></div>
+      <div class="toolbar" id="topActions"></div>
+    </div>
+
+    <section id="page-dashboard"></section>
+    <section id="page-pelanggan" class="hidden"></section>
+    <section id="page-paket" class="hidden"></section>
+    <section id="page-tagihan" class="hidden"></section>
+    <section id="page-riwayat" class="hidden"></section>
+  </main>
+</div>
+
+<div class="overlay hidden" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<script>
+let db;
+let confirmCallback = null;
+
+const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const PAGE_TITLES = {
+  dashboard:['Dashboard','Ringkasan bisnis WiFi Anda'],
+  pelanggan:['Pelanggan','Kelola data langganan internet'],
+  paket:['Paket Layanan','Daftar paket kecepatan dan harga'],
+  tagihan:['Tagihan','Generate dan kelola tagihan bulanan'],
+  riwayat:['Riwayat Pembayaran','Semua transaksi yang sudah lunas']
+};
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function save(){localStorage.setItem('billingwifi_db',JSON.stringify(db))}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function rp(n){return 'Rp '+Number(n||0).toLocaleString('id-ID')}
+function fmtDate(iso){return iso?new Date(iso).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}):'-'}
+function currentPeriode(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function periodeLabel(p){const[y,m]=String(p).split('-');return (MONTHS[+m-1]||'?')+' '+y}
+function dueDateFor(periode,day){const[y,m]=String(periode).split('-').map(Number);const last=new Date(y,m,0).getDate();return new Date(y,m-1,Math.min(day||15,last)).toISOString()}
+function tempoTagihan(t){
+  if(t.status==='lunas'||!t.jatuhTempo)return t.jatuhTempo;
+  const c=getPelanggan(t.pelangganId);
+  return c&&c.jatuhTempo?dueDateFor(t.periode,c.jatuhTempo):t.jatuhTempo;
+}
+function isOverdue(t){
+  if(t.status!=='belum')return false;
+  const tmp=tempoTagihan(t);
+  if(!tmp)return false;
+  const d=new Date();d.setHours(0,0,0,0);
+  return new Date(tmp)<d;
+}
+function lastPeriodes(n){const out=[];const d=new Date();d.setDate(1);for(let i=0;i<n;i++){out.unshift(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));d.setMonth(d.getMonth()-1)}return out}
+function getPaket(id){return db.paket.find(p=>p.id===id)}
+function getPelanggan(id){return db.pelanggan.find(p=>p.id===id)}
+function normTelp(telp){let n=(telp||'').replace(/\D/g,'');if(n.startsWith('0'))n='62'+n.slice(1);return n}
+function getWaCfg(){try{return JSON.parse(localStorage.getItem('billingwifi_wa'))||{}}catch(e){return{}}}
+function setWaCfg(cfg){localStorage.setItem('billingwifi_wa',JSON.stringify(cfg))}
+function sendFonnte(token,target,message){
+  return fetch('https://api.fonnte.com/send',{
+    method:'POST',
+    headers:{'Authorization':token},
+    body:new URLSearchParams({target:target,message:message})
+  }).then(r=>r.json()).then(d=>!!d.status).catch(()=>false);
+}
+function waText(t,c){
+  return 'Yth. '+c.nama+',\n\nKami informasikan bahwa tagihan internet '+periodeLabel(t.periode)+' sebesar *'+rp(t.jumlah)+'* telah terbit'+(t.jatuhTempo?' dengan batas pembayaran *'+fmtDate(tempoTagihan(t))+'*':'')+'.\n\nMohon lakukan pembayaran. Terima kasih.\n\nSalam hangat,\nASNET';
+}
+
+function seed(){
+  const p1=uid(),p2=uid(),p3=uid();
+  db={
+    paket:[
+      {id:p1,nama:'Home Basic',kecepatan:'10 Mbps',harga:150000},
+      {id:p2,nama:'Home Pro',kecepatan:'20 Mbps',harga:250000},
+      {id:p3,nama:'Business',kecepatan:'50 Mbps',harga:550000}
+    ],
+    pelanggan:[],
+    tagihan:[]
+  };
+  const c=[
+    ['Budi Santoso','Server Pusat','081234567890',p1,true,10],
+    ['Siti Rahayu','Server Timur','082198765432',p2,true,15],
+    ['Ahmad Fauzi','Server Pusat','085312345678',p1,true,5],
+    ['Dewi Lestari','Server Barat','081377788899',p3,true,25],
+    ['Rudi Hartono','Server Timur','085700112233',p2,false,20]
+  ];
+  const prev=new Date();prev.setDate(1);prev.setMonth(prev.getMonth()-1);
+  const prevPeriode=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');
+  c.forEach((row,i)=>{
+    const id=uid();
+    db.pelanggan.push({id,nama:row[0],alamat:row[1],telp:row[2],paketId:row[3],status:row[4]?'aktif':'nonaktif',jatuhTempo:row[5],tglDaftar:new Date(Date.now()-((i+3)*86400000*30)).toISOString()});
+    if(row[4]){
+      db.tagihan.push({id:uid(),pelangganId:id,paketId:row[3],periode:prevPeriode,jumlah:getPaket(row[3]).harga,status:i<3?'lunas':'belum',tanggalBayar:i<3?new Date(prev.getFullYear(),prev.getMonth(),20+i).toISOString():null,jatuhTempo:dueDateFor(prevPeriode,row[5])});
+    }
+  });
+  save();
+}
+
+function resetAll(){db=null;localStorage.removeItem('billingwifi_db');seed();closeModal();goPage(currentPage);toast('Data berhasil direset')}
+
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const el=document.createElement('div');
+  el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2600);
+}
+
+function goPage(page){
+  currentPage=page;
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+  document.querySelectorAll('main > section').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('page-'+page).classList.remove('hidden');
+  document.getElementById('pageTitle').textContent=PAGE_TITLES[page][0];
+  document.getElementById('pageSub').textContent=PAGE_TITLES[page][1];
+  const acts=document.getElementById('topActions');acts.innerHTML='';
+  if(page==='pelanggan')acts.innerHTML='<button class="btn btn-outline" style="color:var(--danger)" onclick="delAllPelanggan()">🗑 Hapus Semua</button><button class="btn btn-primary" onclick="formPelanggan()">+ Tambah Pelanggan</button>';
+  if(page==='paket')acts.innerHTML='<button class="btn btn-primary" onclick="formPaket()">+ Tambah Paket</button>';
+  if(page==='tagihan')acts.innerHTML='<button class="btn btn-wa" onclick="sendMassal()">💬 Kirim Pengingat Massal</button><button class="btn btn-outline" onclick="formTagihanSatuan()">+ Tagihan Satuan</button><button class="btn btn-primary" onclick="formGenerate()">⚡ Generate Tagihan Massal</button>';
+  renders[page]();
+}
+
+const renders={};
+currentPage='dashboard';
+
+renders.dashboard=function(){
+  const cp=currentPeriode();
+  const aktif=db.pelanggan.filter(c=>c.status==='aktif');
+  const belum=db.tagihan.filter(t=>t.status==='belum');
+  const terlambat=belum.filter(isOverdue);
+  const lunas=db.tagihan.filter(t=>t.status==='lunas');
+  const incomeMonth=lunas.filter(t=>t.periode===cp).reduce((a,t)=>a+t.jumlah,0);
+  const incomeAll=lunas.reduce((a,t)=>a+t.jumlah,0);
+  const recent=[...lunas].sort((a,b)=>new Date(b.tanggalBayar)-new Date(a.tanggalBayar)).slice(0,6);
+
+  const periods=lastPeriodes(6);
+  const bars=periods.map(p=>{
+    const v=lunas.filter(t=>t.periode===p).reduce((a,t)=>a+t.jumlah,0);
+    const[y,m]=p.split('-');
+    return {label:(MONTHS[+m-1]||'').slice(0,3)+' '+String(y).slice(2),value:v};
+  });
+  const max=Math.max(...bars.map(b=>b.value),1);
+
+  let html='<div class="cards">'
+    +statCard('👥','ic-indigo',db.pelanggan.length,'Total Pelanggan ('+aktif.length+' aktif)')
+    +statCard('💵','ic-green',rp(incomeMonth),'Pendapatan Bulan Ini')
+    +statCard('⏳','ic-red',belum.length+' tagihan','Belum Lunas '+rp(belum.reduce((a,t)=>a+t.jumlah,0))+(terlambat.length?' · '+terlambat.length+' terlambat':''))
+    +statCard('🏆','ic-amber',rp(incomeAll),'Total Pendapatan')
+    +'</div>';
+
+  html+='<div style="display:grid;grid-template-columns:1fr;gap:20px">';
+  html+='<div class="panel"><div class="panel-head"><h2>Pendapatan 6 Bulan Terakhir</h2></div><div class="chart">';
+  bars.forEach(b=>{
+    const h=Math.round(b.value/max*100);
+    html+='<div class="bar-wrap"><div class="bar-val">'+(b.value?rpShort(b.value):'-')+'</div><div class="bar" style="height:'+Math.max(h,3)+'%" title="'+periodeLabelFull(b)+'"></div><div class="bar-label">'+b.label+'</div></div>';
+  });
+  html+='</div></div>';
+
+  html+='<div class="panel"><div class="panel-head"><h2>Pembayaran Terbaru</h2><button class="btn btn-outline btn-sm" onclick="goPage(\'riwayat\')">Lihat Semua</button></div>';
+  html+=recent.length?'<div class="table-scroll"><table><thead><tr><th>Tanggal</th><th>Pelanggan</th><th>Periode</th><th>Jumlah</th></tr></thead><tbody>'
+    +recent.map(t=>{const c=getPelanggan(t.pelangganId);return '<tr><td>'+fmtDate(t.tanggalBayar)+'</td><td>'+esc(c?c.nama:'-')+'</td><td>'+periodeLabel(t.periode)+'</td><td><b>'+rp(t.jumlah)+'</b></td></tr>'}).join('')
+    +'</tbody></table></div>':'<div class="empty"><span>📭</span>Belum ada pembayaran</div>';
+  html+='</div></div>';
+
+  document.getElementById('page-dashboard').innerHTML=html;
+};
+function statCard(ico,color,big,label){return '<div class="card stat-card"><div class="stat-ico '+color+'">'+ico+'</div><div><h3>'+big+'</h3><p>'+label+'</p></div></div>'}
+function rpShort(n){return n>=1000000?'Rp'+(n/1000000).toFixed(1).replace('.0','')+'jt':n>=1000?'Rp'+Math.round(n/1000)+'rb':'Rp'+n}
+function periodeLabelFull(b){return b.label}
+
+renders.pelanggan=function(){
+  if(!db.pelanggan.length){
+    document.getElementById('page-pelanggan').innerHTML='<div class="panel"><div class="empty"><span>👥</span>Belum ada pelanggan.<br>Klik "Tambah Pelanggan" untuk memulai.</div></div>';
+    return;
+  }
+  const servers=[...new Set(db.pelanggan.map(c=>c.alamat||''))].sort((a,b)=>a===''?1:(b===''?-1:a.localeCompare(b)));
+  let html='';
+  servers.forEach(sv=>{
+    const list=db.pelanggan.filter(c=>(c.alamat||'')===sv);
+    const aktif=list.filter(c=>c.status==='aktif').length;
+    const tunggakan=db.tagihan.reduce((a,t)=>{
+      if(t.status!=='belum')return a;
+      const c=getPelanggan(t.pelangganId);
+      return c&&list.includes(c)?a+t.jumlah:a;
+    },0);
+    const rows=list.map(c=>{
+      const pk=getPaket(c.paketId);
+      const cp=currentPeriode();
+      const bill=db.tagihan.find(t=>t.pelangganId===c.id&&t.periode===cp);
+      let billBadge='<span class="badge badge-off">Belum Ditagih</span>';
+      if(bill){
+        if(bill.status==='lunas')billBadge='<span class="badge badge-lunas">Lunas</span>';
+        else if(isOverdue(bill))billBadge='<span class="badge badge-belum">Terlambat</span>';
+        else billBadge='<span class="badge badge-tempo">Belum Bayar</span>';
+      }
+      return '<tr><td><b>'+esc(c.nama)+'</b></td>'
+        +'<td>'+esc(c.telp||'-')+'</td>'
+        +'<td>'+(pk?esc(pk.nama)+' <span class="sub" style="display:inline">· '+esc(pk.kecepatan)+'</span>':'-')+'</td>'
+        +'<td>Tgl '+(c.jatuhTempo||'-')+'</td>'
+        +'<td>'+billBadge+'</td>'
+        +'<td>'+(c.status==='aktif'?'<span class="badge badge-lunas">Aktif</span>':'<span class="badge badge-off">Nonaktif</span>')+'</td>'
+        +'<td class="actions-cell"><button class="icon-btn" title="Edit" onclick="formPelanggan(\''+c.id+'\')">✏️</button><button class="icon-btn" title="Hapus" onclick="delPelanggan(\''+c.id+'\')">🗑️</button></td></tr>';
+    }).join('');
+    html+='<div class="panel"><div class="panel-head"><h2>📡 '+esc(sv||'Tanpa Server')+'</h2>'
+      +'<div style="font-size:12.5px;color:var(--muted)">'+list.length+' pelanggan · '+aktif+' aktif'+(tunggakan?' · <b style="color:var(--danger)">Tunggakan '+rp(tunggakan)+'</b>':'')+'</div></div>'
+      +'<div class="table-scroll"><table><thead><tr><th>Nama</th><th>No. HP</th><th>Paket</th><th>Jatuh Tempo</th><th>Tagihan Bulan Ini</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  });
+  document.getElementById('page-pelanggan').innerHTML=html;
+};
+
+renders.paket=function(){
+  const rows=db.paket.map(pk=>{
+    const count=db.pelanggan.filter(c=>c.paketId===pk.id&&c.status==='aktif').length;
+    return '<tr><td><b>'+esc(pk.nama)+'</b></td><td>'+esc(pk.kecepatan)+'</td><td><b>'+rp(pk.harga)+'</b><span class="sub"> /bulan</span></td><td>'+count+' pelanggan</td>'
+      +'<td class="actions-cell"><button class="icon-btn" onclick="formPaket(\''+pk.id+'\')">✏️</button><button class="icon-btn" onclick="delPaket(\''+pk.id+'\')">🗑️</button></td></tr>';
+  }).join('');
+  document.getElementById('page-paket').innerHTML=
+    '<div class="panel"><div class="panel-head"><h2>Daftar Paket ('+db.paket.length+')</h2></div>'
+    +(db.paket.length?'<div class="table-scroll"><table><thead><tr><th>Nama Paket</th><th>Kecepatan</th><th>Harga</th><th>Digunakan</th><th>Aksi</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty"><span>📦</span>Belum ada paket layanan.</div>')
+    +'</div>';
+};
+
+let filterPeriode='',filterStatus='',filterQ='';
+renders.tagihan=function(){
+  const periodes=[...new Set(db.tagihan.map(t=>t.periode))].sort().reverse();
+  if(filterPeriode&&!periodes.includes(filterPeriode))filterPeriode='';
+  let list=[...db.tagihan];
+  if(filterPeriode)list=list.filter(t=>t.periode===filterPeriode);
+  if(filterStatus==='terlambat')list=list.filter(isOverdue);
+  else if(filterStatus)list=list.filter(t=>t.status===filterStatus);
+  if(filterQ){const q=filterQ.toLowerCase();list=list.filter(t=>{const c=getPelanggan(t.pelangganId);return c&&c.nama.toLowerCase().includes(q)})}
+  list.sort((a,b)=>b.periode.localeCompare(a.periode)||a.status.localeCompare(b.status));
+
+  let opts='<option value="">Semua Periode</option>'+periodes.map(p=>'<option value="'+p+'"'+(p===filterPeriode?' selected':'')+'>'+periodeLabel(p)+'</option>').join('');
+
+  const rowHtml=t=>{
+    const c=getPelanggan(t.pelangganId);
+    const pk=getPaket(t.paketId);
+    let act='';
+    if(t.status==='belum'){
+      act='<button class="btn btn-success btn-sm" onclick="bayar(\''+t.id+'\')">✓ Bayar</button> '
+        +'<button class="btn btn-wa btn-sm" onclick="remindWa(\''+t.id+'\')">WA</button> '
+        +'<button class="icon-btn" title="Ubah nominal" onclick="formEditTagihan(\''+t.id+'\')">✏️</button>'
+        +'<button class="icon-btn" title="Hapus" onclick="delTagihan(\''+t.id+'\')">🗑️</button>';
+    }else{
+      act='<button class="btn btn-outline btn-sm" onclick="showReceipt(\''+t.id+'\',true)">🖨 Struk</button>';
+    }
+    return '<tr><td><b>'+periodeLabel(t.periode)+'</b></td>'
+      +'<td>'+esc(c?c.nama:'-')+(c?'<div class="sub">'+esc(c.telp||'')+'</div>':'')+'</td>'
+      +'<td>'+(pk?esc(pk.nama):'-')+'</td>'
+      +'<td><b>'+rp(t.jumlah)+'</b></td>'
+      +'<td>'+fmtDate(tempoTagihan(t))+(t.status==='belum'&&isOverdue(t)?' <span class="badge badge-belum">Lewat</span>':'')+'</td>'
+      +'<td>'+(t.status==='lunas'?'<span class="badge badge-lunas">Lunas</span>':(isOverdue(t)?'<span class="badge badge-belum">Terlambat</span>':'<span class="badge badge-tempo">Belum</span>'))+'</td>'
+      +'<td>'+fmtDate(t.tanggalBayar)+'</td>'
+      +'<td class="actions-cell">'+act+'</td></tr>';
+  };
+
+  const servers=[...new Set(list.map(t=>{const c=getPelanggan(t.pelangganId);return c?(c.alamat||''):'-'}))].sort((a,b)=>a==='-'?1:(b==='-'?-1:a.localeCompare(b)));
+  let panels='';
+  servers.forEach(sv=>{
+    const slist=list.filter(t=>{const c=getPelanggan(t.pelangganId);return (c?(c.alamat||''):'-')===sv});
+    const lunasN=slist.filter(t=>t.status==='lunas').length;
+    const tunggakan=slist.filter(t=>t.status==='belum').reduce((a,t)=>a+t.jumlah,0);
+    panels+='<div class="panel"><div class="panel-head"><h2>📡 '+esc(sv==='-'||!sv?'Tanpa Server':sv)+'</h2>'
+      +'<div style="font-size:12.5px;color:var(--muted)">'+slist.length+' tagihan · '+lunasN+' lunas'+(tunggakan?' · <b style="color:var(--danger)">Tunggakan '+rp(tunggakan)+'</b>':'')+'</div></div>'
+      +'<div class="table-scroll"><table><thead><tr><th>Periode</th><th>Pelanggan</th><th>Paket</th><th>Jumlah</th><th>Jatuh Tempo</th><th>Status</th><th>Tgl Bayar</th><th>Aksi</th></tr></thead><tbody>'+slist.map(rowHtml).join('')+'</tbody></table></div></div>';
+  });
+
+  document.getElementById('page-tagihan').innerHTML=
+    '<div class="panel"><div class="panel-head"><h2>Daftar Tagihan ('+list.length+')</h2>'
+    +'<div class="toolbar">'
+    +'<select onchange="filterPeriode=this.value;renders.tagihan()">'+opts+'</select>'
+    +'<select onchange="filterStatus=this.value;renders.tagihan()"><option value="">Semua Status</option><option value="belum"'+(filterStatus==='belum'?' selected':'')+'>Belum Lunas</option><option value="terlambat"'+(filterStatus==='terlambat'?' selected':'')+'>Terlambat</option><option value="lunas"'+(filterStatus==='lunas'?' selected':'')+'>Lunas</option></select>'
+    +'<input type="search" placeholder="Cari pelanggan..." value="'+esc(filterQ)+'" oninput="tagSearch(this)" style="min-width:170px">'
+    +'</div></div></div>'
+    +(list.length?panels:'<div class="panel"><div class="empty"><span>🧾</span>Tidak ada tagihan.<br>Klik "Generate Tagihan Massal" untuk membuat tagihan bulanan.</div></div>');
+};
+
+function tagSearch(el){
+  filterQ=el.value;
+  const pos=el.selectionStart;
+  renders.tagihan();
+  const inp=document.querySelector('#page-tagihan input[type=search]');
+  if(inp){inp.focus();try{inp.setSelectionRange(pos,pos)}catch(e){}}
+}
+
+renders.riwayat=function(){
+  const lunas=db.tagihan.filter(t=>t.status==='lunas').sort((a,b)=>new Date(b.tanggalBayar)-new Date(a.tanggalBayar));
+  const total=lunas.reduce((a,t)=>a+t.jumlah,0);
+  const rows=lunas.map(t=>{
+    const c=getPelanggan(t.pelangganId);
+    return '<tr><td>'+fmtDate(t.tanggalBayar)+'</td><td><b>'+esc(c?c.nama:'-')+'</b></td><td>'+periodeLabel(t.periode)+'</td><td>'+rp(t.jumlah)+'</td>'
+      +'<td class="actions-cell"><button class="btn btn-outline btn-sm" onclick="showReceipt(\''+t.id+'\',true)">🖨 Struk</button></td></tr>';
+  }).join('');
+  document.getElementById('page-riwayat').innerHTML=
+    '<div class="cards"><div class="card stat-card"><div class="stat-ico ic-green">💰</div><div><h3>'+lunas.length+'</h3><p>Total Transaksi Lunas</p></div></div>'
+    +'<div class="card stat-card"><div class="stat-ico ic-amber">🏆</div><div><h3>'+rp(total)+'</h3><p>Total Pendapatan</p></div></div></div>'
+    +'<div class="panel"><div class="panel-head"><h2>Riwayat Pembayaran</h2><button class="btn btn-outline" onclick="exportCsv()">⬇ Export CSV</button></div>'
+    +(lunas.length?'<div class="table-scroll"><table><thead><tr><th>Tanggal</th><th>Pelanggan</th><th>Periode</th><th>Jumlah</th><th>Aksi</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="empty"><span>💰</span>Belum ada pembayaran tercatat.</div>')
+    +'</div>';
+};
+
+function openModal(html){
+  document.getElementById('modalBox').innerHTML=html;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.add('hidden')}
+function askConfirm(msg,onYes){
+  confirmCallback=onYes;
+  openModal('<h3>Konfirmasi</h3><p class="confirm-text">'+msg+'</p><div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-danger" onclick="runConfirm()">Ya, Lanjutkan</button></div>');
+}
+function runConfirm(){const cb=confirmCallback;confirmCallback=null;closeModal();if(cb)cb()}
+
+function formPelanggan(id){
+  const c=id?getPelanggan(id):null;
+  const opts=db.paket.map(p=>'<option value="'+p.id+'"'+(c&&c.paketId===p.id?' selected':'')+'>'+esc(p.nama)+' — '+esc(p.kecepatan)+' — '+rp(p.harga)+'/bln</option>').join('');
+  openModal(`<h3>${c?'Edit Pelanggan':'Tambah Pelanggan'}</h3><form id="fPel">
+    <div class="form-group"><label>Nama Lengkap *</label><input name="nama" required value="${esc(c?c.nama:'')}" placeholder="cth: Budi Santoso"></div>
+    <div class="form-group"><label>No. HP / WhatsApp *</label><input name="telp" required value="${esc(c?c.telp:'')}" placeholder="cth: 081234567890"></div>
+    <div class="form-group"><label>Server</label><input name="alamat" value="${esc(c?c.alamat:'')}" placeholder="Nama server / lokasi"></div>
+    <div class="form-group"><label>Paket</label><select name="paketId">${opts}</select></div>
+    <div class="form-group"><label>Jatuh Tempo (tanggal tiap bulan)</label><input name="jatuhTempo" type="number" min="1" max="31" required value="${c?c.jatuhTempo:15}"></div>
+    <div class="form-group"><label>Status</label><select name="status"><option value="aktif"${!c||c.status==='aktif'?' selected':''}>Aktif</option><option value="nonaktif"${c&&c.status==='nonaktif'?' selected':''}>Nonaktif</option></select></div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-primary">${c?'Simpan':'Tambah'}</button></div></form>`);
+  document.getElementById('fPel').addEventListener('submit',e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const data={nama:f.get('nama').trim(),telp:f.get('telp').trim(),alamat:f.get('alamat').trim(),paketId:f.get('paketId'),jatuhTempo:Math.min(31,Math.max(1,+f.get('jatuhTempo')||15)),status:f.get('status')};
+    if(c){
+      const lama=c.jatuhTempo;
+      Object.assign(c,data);
+      if(data.jatuhTempo!==lama){
+        db.tagihan.forEach(t=>{
+          if(t.pelangganId===c.id&&t.status==='belum')t.jatuhTempo=dueDateFor(t.periode,c.jatuhTempo);
+        });
+      }
+    }else db.pelanggan.push({id:uid(),...data,tglDaftar:new Date().toISOString()});
+    save();closeModal();goPage('pelanggan');toast(c?'Pelanggan diperbarui':'Pelanggan ditambahkan');
+  });
+}
+function delPelanggan(id){
+  const c=getPelanggan(id);
+  const bills=db.tagihan.filter(t=>t.pelangganId===id).length;
+  askConfirm('Hapus pelanggan <b>'+esc(c.nama)+'</b>?'+(bills?'<br><br>'+bills+' tagihan terkait juga akan dihapus.':""),()=>{
+    db.pelanggan=db.pelanggan.filter(x=>x.id!==id);
+    db.tagihan=db.tagihan.filter(t=>t.pelangganId!==id);
+    save();goPage('pelanggan');toast('Pelanggan dihapus');
+  });
+}
+
+function delAllPelanggan(){
+  if(!db.pelanggan.length)return toast('Belum ada pelanggan');
+  const nb=db.tagihan.filter(t=>db.pelanggan.some(c=>c.id===t.pelangganId)).length;
+  askConfirm('Hapus <b>SEMUA '+db.pelanggan.length+' pelanggan</b>?'+(nb?'<br><br>'+nb+' tagihan terkait juga akan ikut dihapus.<br>Data paket dan pengaturan WA tidak terpengaruh.':''),()=>{
+    db.pelanggan=[];
+    db.tagihan=[];
+    save();goPage('pelanggan');toast('Semua pelanggan dihapus');
+  });
+}
+
+function formPaket(id){
+  const p=id?getPaket(id):null;
+  openModal(`<h3>${p?'Edit Paket':'Tambah Paket'}</h3><form id="fPak">
+    <div class="form-group"><label>Nama Paket *</label><input name="nama" required value="${esc(p?p.nama:'')}" placeholder="cth: Home Basic"></div>
+    <div class="form-group"><label>Kecepatan *</label><input name="kecepatan" required value="${esc(p?p.kecepatan:'')}" placeholder="cth: 10 Mbps"></div>
+    <div class="form-group"><label>Harga per Bulan (Rp) *</label><input name="harga" type="number" min="0" step="1000" required value="${p?p.harga:''}" placeholder="cth: 150000"></div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-primary">${p?'Simpan':'Tambah'}</button></div></form>`);
+  document.getElementById('fPak').addEventListener('submit',e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const data={nama:f.get('nama').trim(),kecepatan:f.get('kecepatan').trim(),harga:+f.get('harga')};
+    if(p)Object.assign(p,data);else db.paket.push({id:uid(),...data});
+    save();closeModal();goPage('paket');toast(p?'Paket diperbarui':'Paket ditambahkan');
+  });
+}
+function delPaket(id){
+  const used=db.pelanggan.filter(c=>c.paketId===id).length;
+  if(used)return toast('Tidak bisa dihapus: paket sedang dipakai '+used+' pelanggan');
+  const p=getPaket(id);
+  askConfirm('Hapus paket <b>'+esc(p.nama)+'</b>?',()=>{
+    db.paket=db.paket.filter(x=>x.id!==id);
+    save();goPage('paket');toast('Paket dihapus');
+  });
+}
+
+function formGenerate(){
+  const d=new Date();
+  const def=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  const aktif=db.pelanggan.filter(c=>c.status==='aktif');
+  if(!aktif.length)return toast('Belum ada pelanggan aktif');
+  openModal(`<h3>⚡ Generate Tagihan Massal</h3><form id="fGen">
+    <p class="confirm-text" style="margin-bottom:16px">Membuat tagihan bulanan untuk semua <b>pelanggan aktif</b> sesuai harga paket masing-masing. Pelanggan yang sudah punya tagihan pada periode tersebut akan dilewati.</p>
+    <div class="form-group"><label>Periode Tagihan *</label><input name="periode" type="month" required value="${def}"></div>
+    <p class="hint">${aktif.length} pelanggan aktif akan ditagih.</p>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-primary">Generate</button></div></form>`);
+  document.getElementById('fGen').addEventListener('submit',e=>{
+    e.preventDefault();
+    const p=new FormData(e.target).get('periode');
+    let n=0;
+    aktif.forEach(c=>{
+      if(db.tagihan.some(t=>t.pelangganId===c.id&&t.periode===p))return;
+      db.tagihan.push({id:uid(),pelangganId:c.id,paketId:c.paketId,periode:p,jumlah:getPaket(c.paketId)?getPaket(c.paketId).harga:0,status:'belum',tanggalBayar:null,jatuhTempo:dueDateFor(p,c.jatuhTempo)});
+      n++;
+    });
+    save();closeModal();
+    if(n){goPage('tagihan');toast(n+' tagihan berhasil dibuat')}else toast('Semua pelanggan sudah ditagih pada periode ini');
+  });
+}
+
+function formTagihanSatuan(){
+  const aktif=db.pelanggan.filter(c=>c.status==='aktif');
+  if(!aktif.length)return toast('Belum ada pelanggan aktif');
+  const d=new Date();
+  const def=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  openModal(`<h3>+ Tagihan Satuan</h3><form id="fSat">
+    <div class="form-group"><label>Pelanggan *</label><select name="cid" id="satCust">${aktif.map(c=>'<option value="'+c.id+'">'+esc(c.nama)+'</option>').join('')}</select></div>
+    <div class="form-group"><label>Periode *</label><input name="periode" type="month" required value="${def}"></div>
+    <div class="form-group"><label>Nominal (Rp) *</label><input name="jumlah" id="satJumlah" type="number" min="0" required></div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-primary">Tambah</button></div></form>`);
+  const fill=()=>{const c=getPelanggan(document.getElementById('satCust').value);const pk=c&&getPaket(c.paketId);document.getElementById('satJumlah').value=pk?pk.harga:''};
+  fill();
+  document.getElementById('satCust').addEventListener('change',fill);
+  document.getElementById('fSat').addEventListener('submit',e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const cid=f.get('cid'),p=f.get('periode');
+    if(db.tagihan.some(t=>t.pelangganId===cid&&t.periode===p))return toast('Pelanggan ini sudah punya tagihan pada periode tersebut');
+    db.tagihan.push({id:uid(),pelangganId:cid,paketId:getPelanggan(cid).paketId,periode:p,jumlah:+f.get('jumlah'),status:'belum',tanggalBayar:null,jatuhTempo:dueDateFor(p,getPelanggan(cid).jatuhTempo)});
+    save();closeModal();goPage('tagihan');toast('Tagihan ditambahkan');
+  });
+}
+
+function formEditTagihan(id){
+  const t=db.tagihan.find(x=>x.id===id);
+  openModal(`<h3>Ubah Nominal Tagihan</h3><form id="fEt">
+    <div class="form-group"><label>Nominal (Rp)</label><input name="jumlah" type="number" min="0" required value="${t.jumlah}"></div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-primary">Simpan</button></div></form>`);
+  document.getElementById('fEt').addEventListener('submit',e=>{
+    e.preventDefault();
+    t.jumlah=+new FormData(e.target).get('jumlah');
+    save();closeModal();renders.tagihan();toast('Nominal tagihan diperbarui');
+  });
+}
+function delTagihan(id){
+  const t=db.tagihan.find(x=>x.id===id);
+  const c=getPelanggan(t.pelangganId);
+  askConfirm('Hapus tagihan <b>'+periodeLabel(t.periode)+'</b> atas nama <b>'+esc(c?c.nama:'-')+'</b>?',()=>{
+    db.tagihan=db.tagihan.filter(x=>x.id!==id);
+    save();renders.tagihan();toast('Tagihan dihapus');
+  });
+}
+
+function bayar(id){
+  const t=db.tagihan.find(x=>x.id===id);
+  const c=getPelanggan(t.pelangganId);
+  askConfirm('Konfirmasi pembayaran <b>'+rp(t.jumlah)+'</b><br>'+esc(c?c.nama:'-')+' — periode '+periodeLabel(t.periode)+'?',()=>{
+    t.status='lunas';
+    t.tanggalBayar=new Date().toISOString();
+    save();closeModal();renders.tagihan();toast('Pembayaran dicatat ✓');
+    showReceipt(id,false);
+  });
+}
+
+function remindWa(id){
+  const t=db.tagihan.find(x=>x.id===id);
+  const c=getPelanggan(t.pelangganId);
+  if(!c||!c.telp)return toast('Pelanggan tidak memiliki nomor HP');
+  const cfg=getWaCfg();
+  if(!cfg.token){formWaSetting();return toast('Pasang token Fonnte dulu agar pesan bisa terkirim otomatis')}
+  openModal(`<h3>💬 Kirim WhatsApp</h3><form id="fWamsg">
+    <p class="hint" style="margin:0 0 12px">Kepada: <b>${esc(c.nama)}</b> (${esc(c.telp)}) · ${periodeLabel(t.periode)} — ${rp(t.jumlah)}</p>
+    <div class="form-group"><label>Isi Pesan — boleh diedit sebelum kirim</label><textarea name="msg" rows="10">${esc(waText(t,c))}</textarea></div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-wa">Kirim via Fonnte</button></div></form>`);
+  document.getElementById('fWamsg').addEventListener('submit',e=>{
+    e.preventDefault();
+    const msg=String(new FormData(e.target).get('msg')||'').trim();
+    if(!msg)return toast('Pesan kosong');
+    closeModal();
+    toast('Mengirim via Fonnte ke '+c.nama+'...');
+    sendFonnte(cfg.token,normTelp(c.telp),msg).then(ok=>toast(ok?'✓ Pesan terkirim ke '+c.nama:'✗ Gagal kirim — cek token/koneksi Fonnte'));
+  });
+}
+
+function formWaSetting(){
+  const cfg=getWaCfg();
+  openModal(`<h3>⚙️ Setting WA Gateway (Fonnte)</h3><form id="fWa">
+    <p class="hint" style="margin:0 0 14px">1. Daftar gratis di <b>fonnte.com</b> → hubungkan nomor WhatsApp lewat QR<br>2. Salin <b>Token</b> dari dashboard Fonnte → tempel di bawah<br>3. Setelah tersimpan, tombol WA mengirim pesan otomatis tanpa buka aplikasi</p>
+    <div class="form-group"><label>Fonnte Token</label><input name="token" value="${esc(cfg.token||'')}" placeholder="Tempel token Fonnte di sini"></div>
+    <div class="form-group"><label>No. HP untuk Tes (opsional)</label><input name="testno" value="${esc(cfg.testno||'')}" placeholder="cth: 081234567890"></div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Tutup</button><button class="btn btn-primary">Simpan</button></div></form>
+    ${cfg.token?'<button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="testWa()">📨 Kirim Pesan Tes ke No. HP di Atas</button>':''}`);
+  document.getElementById('fWa').addEventListener('submit',e=>{
+    e.preventDefault();
+    const f=new FormData(e.target);
+    setWaCfg({token:f.get('token').trim(),testno:f.get('testno').trim()});
+    closeModal();toast('Pengaturan WA disimpan');
+    goPage(currentPage);
+  });
+}
+
+function testWa(){
+  const cfg=getWaCfg();
+  if(!cfg.token)return toast('Isi token dulu lalu simpan');
+  if(!cfg.testno)return toast('Isi No. HP untuk tes dulu');
+  toast('Mengirim tes via Fonnte...');
+  sendFonnte(cfg.token,normTelp(cfg.testno),'Tes koneksi WiFi Billing — jika pesan ini sampai, gateway sudah siap ✓').then(ok=>toast(ok?'✓ Tes berhasil! Cek WhatsApp Anda':'✗ Gagal — cek token & pastikan device Fonnte terhubung'));
+}
+
+function sendMassal(){
+  const cfg=getWaCfg();
+  if(!cfg.token){formWaSetting();return toast('Pasang token Fonnte dulu untuk kirim massal')}
+  let base=db.tagihan.filter(t=>t.status==='belum');
+  if(filterPeriode)base=base.filter(t=>t.periode===filterPeriode);
+  base=base.filter(t=>{const c=getPelanggan(t.pelangganId);return c&&c.telp&&c.status==='aktif'});
+  if(!base.length)return toast('Tidak ada tagihan belum lunas yang bisa dikirim');
+  const servers=[...new Set(base.map(t=>getPelanggan(t.pelangganId).alamat||''))].sort((a,b)=>a===''?1:(b===''?-1:a.localeCompare(b)));
+  const cnt=sv=>base.filter(t=>(getPelanggan(t.pelangganId).alamat||'')===sv).length;
+  openModal(`<h3>💬 Kirim Pengingat Massal</h3><form id="fMs">
+    <p class="hint" style="margin:0 0 14px">Tersedia <b>${base.length} tagihan</b> belum lunas${filterPeriode?' pada periode '+periodeLabel(filterPeriode):' (semua periode)'}. Pilih tujuan:</p>
+    <div class="form-group"><label>Kirim ke Server</label><select name="server">
+      <option value="">📡 Semua Server (${base.length} pesan)</option>
+      ${servers.map(sv=>'<option value="'+esc(sv)+'">'+esc(sv||'Tanpa Server')+' ('+cnt(sv)+' pesan)</option>').join('')}
+    </select></div>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-wa">Kirim Sekarang</button></div></form>`);
+  document.getElementById('fMs').addEventListener('submit',e=>{
+    e.preventDefault();
+    const sv=new FormData(e.target).get('server');
+    const list=base.filter(t=>(getPelanggan(t.pelangganId).alamat||'')===sv);
+    closeModal();
+    askConfirm('Kirim pengingat WhatsApp ke <b>'+list.length+' pelanggan</b>'+(sv?' pada '+(sv||'Tanpa Server'):'')+'?',async()=>{
+      let ok=0,fail=0;
+      for(let i=0;i<list.length;i++){
+        const t=list[i];
+        const c=getPelanggan(t.pelangganId);
+        toast('Mengirim '+(i+1)+'/'+list.length+' ke '+c.nama+'...');
+        const sukses=await sendFonnte(cfg.token,normTelp(c.telp),waText(t,c));
+        sukses?ok++:fail++;
+        await new Promise(r=>setTimeout(r,900));
+      }
+      toast('Selesai: '+ok+' terkirim'+(fail?', '+fail+' gagal':''));
+    });
+  });
+}
+
+function showReceipt(id,allowPrint){
+  const t=db.tagihan.find(x=>x.id===id);
+  const c=getPelanggan(t.pelangganId);
+  const pk=getPaket(t.paketId);
+  const biz='WiFi Billing Net';
+  openModal('<div class="receipt" id="receiptArea">'
+    +'<h4>'+biz+'</h4><div class="rc-sub">STRUK PEMBAYARAN INTERNET</div><hr>'
+    +'<div class="row"><span>No. Ref</span><span>'+t.id.toUpperCase()+'</span></div>'
+    +'<div class="row"><span>Tanggal</span><span>'+fmtDate(t.tanggalBayar)+'</span></div>'
+    +'<div class="row"><span>Pelanggan</span><span>'+esc(c?c.nama:'-')+'</span></div>'
+    +(pk?'<div class="row"><span>Paket</span><span>'+esc(pk.nama)+' ('+esc(pk.kecepatan)+')</span></div>':'')
+    +'<div class="row"><span>Periode</span><span>'+periodeLabel(t.periode)+'</span></div><hr>'
+    +'<div class="row total"><span>TOTAL BAYAR</span><span>'+rp(t.jumlah)+'</span></div><hr>'
+    +'<div class="rc-sub">Terima kasih telah berlangganan 🙏</div></div>'
+    +(allowPrint?'<div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Tutup</button><button class="btn btn-primary" onclick="window.print()">🖨 Cetak</button></div>':''));
+}
+
+function exportCsv(){
+  const lunas=db.tagihan.filter(t=>t.status==='lunas').sort((a,b)=>new Date(b.tanggalBayar)-new Date(a.tanggalBayar));
+  if(!lunas.length)return toast('Belum ada data untuk diekspor');
+  let csv='Tanggal;Nama;No HP;Periode;Jumlah\n';
+  lunas.forEach(t=>{const c=getPelanggan(t.pelangganId);csv+=fmtDate(t.tanggalBayar)+';'+(c?c.nama:'')+';'+(c?c.telp:'')+';'+periodeLabel(t.periode)+';'+t.jumlah+'\n'});
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='riwayat-pembayaran.csv';
+  a.click();
+  toast('CSV berhasil diunduh');
+}
+
+function autoGenerate(){
+  const cp=currentPeriode();
+  const aktif=db.pelanggan.filter(c=>c.status==='aktif');
+  if(!aktif.length)return;
+  if(db.tagihan.some(t=>t.periode===cp))return;
+  let n=0;
+  aktif.forEach(c=>{
+    if(db.tagihan.some(t=>t.pelangganId===c.id&&t.periode===cp))return;
+    db.tagihan.push({id:uid(),pelangganId:c.id,paketId:c.paketId,periode:cp,jumlah:getPaket(c.paketId)?getPaket(c.paketId).harga:0,status:'belum',tanggalBayar:null,jatuhTempo:dueDateFor(cp,c.jatuhTempo)});
+    n++;
+  });
+  if(n){
+    save();
+    setTimeout(()=>toast('⚡ Tagihan '+periodeLabel(cp)+' otomatis dibuat untuk '+n+' pelanggan'),800);
+  }
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const raw=localStorage.getItem('billingwifi_db');
+  if(raw){try{db=JSON.parse(raw)}catch(e){db=null}}
+  if(!db||!db.paket)seed();
+  db.pelanggan.forEach(c=>{if(c.jatuhTempo==null)c.jatuhTempo=15});
+  db.tagihan.forEach(t=>{
+    if(t.jatuhTempo==null){
+      const c=getPelanggan(t.pelangganId);
+      if(c)t.jatuhTempo=dueDateFor(t.periode,c.jatuhTempo);
+    }
+  });
+  save();
+  autoGenerate();
+  goPage('dashboard');
+});
+</script>
+
+<style>
+@media print{
+  body *{visibility:hidden}
+  #receiptArea,#receiptArea *{visibility:visible}
+  #receiptArea{position:fixed;top:0;left:0;width:100%;background:#fff;padding:20px}
+  #modalBox{box-shadow:none;padding:0}
+}
+</style>
+</body>
+</html>
