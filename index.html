@@ -148,6 +148,15 @@
   .note-pop.up::after{bottom:auto;top:-6px;border-top:none;border-bottom:7px solid #111827}
   .note-pop button{margin-top:9px;background:rgba(255,255,255,.16);border:none;color:#fff;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer;font-family:inherit}
   .note-pop button:hover{background:rgba(255,255,255,.28)}
+  .note-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--warning-light);border:1px solid #fde68a;border-radius:11px;padding:11px 14px;margin-bottom:16px;font-size:13px;cursor:pointer}
+  .note-banner:hover{background:#fef9c3}
+  .note-banner .nb-ico{font-size:15px}
+  .note-banner .nb-txt{flex:1;min-width:180px;color:var(--text)}
+  .note-banner .nb-more{color:var(--muted)}
+  .note-banner .nb-x{color:var(--muted);font-size:12px;padding:2px 6px;border-radius:6px}
+  .note-banner .nb-x:hover{background:rgba(0,0,0,.08)}
+  .note-chip{background:#fff;border:1px solid #fcd34d;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit;display:inline-block;margin:2px 3px 2px 0}
+  .note-chip:hover{background:var(--primary);border-color:var(--primary);color:#fff}
 
   @media(max-width:900px){
     .sidebar{width:64px}
@@ -396,6 +405,19 @@ function copyWifi(id){
 let pelQ='';
 function pelSearch(el){pelQ=el.value;renders.pelanggan()}
 
+const NB_MAX=6;
+function notesBanner(list){
+  const pakai=list.filter(c=>(c.catatan||'').trim());
+  if(!pakai.length)return '';
+  const shown=pakai.slice(0,NB_MAX).map(c=>'<button class="note-chip" onclick="toggleNote(\''+c.id+'\',this,event)" title="Ketuk untuk lihat catatan">'+esc(c.nama)+'</button>').join('');
+  const sisa=pakai.length-Math.min(pakai.length,NB_MAX);
+  return '<div class="note-banner" onclick="this.remove()" title="Ketuk untuk tutup">'
+    +'<span class="nb-ico">📝</span>'
+    +'<span class="nb-txt"><b>'+pakai.length+' pelanggan</b> punya catatan — ketuk namanya:<br>'+shown
+    +(sisa>0?'<span class="nb-more">+' + sisa + ' lainnya</span>':'')+'</span>'
+    +'<span class="nb-x">✕</span></div>';
+}
+
 renders.pelanggan=function(){
   if(!db.pelanggan.length){
     document.getElementById('page-pelanggan').innerHTML='<div class="panel"><div class="empty"><span>👥</span>Belum ada pelanggan.<br>Klik "Tambah Pelanggan" untuk memulai.</div></div>';
@@ -409,7 +431,7 @@ renders.pelanggan=function(){
     return;
   }
   const servers=[...new Set(cocok.map(c=>c.alamat||''))].sort((a,b)=>a===''?1:(b===''?-1:a.localeCompare(b)));
-  let html='';
+  let html=notesBanner(cocok);
   servers.forEach(sv=>{
     const list=cocok.filter(c=>(c.alamat||'')===sv);
     const aktif=list.filter(c=>c.status==='aktif').length;
@@ -854,7 +876,7 @@ function formBackup(){
 
 function pickBackupFile(){const el=document.getElementById('bkFile');if(el)el.click()}
 
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.5.0';
 function formMore(){
   openModal('<h3>⚙️ Pengaturan &amp; Data</h3>'
     +'<div class="more-list">'
