@@ -157,6 +157,7 @@
   .note-banner .nb-x:hover{background:rgba(0,0,0,.08)}
   .note-chip{background:#fff;border:1px solid #fcd34d;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;font-family:inherit;display:inline-block;margin:2px 3px 2px 0}
   .note-chip:hover{background:var(--primary);border-color:var(--primary);color:#fff}
+  .catatan-cell{display:block;font-size:11.5px;color:#92400e;background:var(--warning-light);border-left:2px solid #fcd34d;border-radius:0 6px 6px 0;padding:3px 8px;margin-top:5px;line-height:1.5;max-width:270px;white-space:pre-wrap;word-break:break-word}
 
   @media(max-width:900px){
     .sidebar{width:64px}
@@ -450,7 +451,8 @@ renders.pelanggan=function(){
         else if(isOverdue(bill))billBadge='<span class="badge badge-belum">Terlambat</span>';
         else billBadge='<span class="badge badge-tempo">Belum Bayar</span>';
       }
-      return '<tr><td><b>'+esc(c.nama)+'</b>'+(c.catatan?'<button class="icon-btn note-btn" title="Lihat catatan" onclick="toggleNote(\''+c.id+'\',this,event)">📝</button>':'')+'</td>'
+      return '<tr><td><b>'+esc(c.nama)+'</b>'+(c.catatan?'<button class="icon-btn note-btn" title="Lihat catatan" onclick="toggleNote(\''+c.id+'\',this,event)">📝</button>':'')
+        +(c.catatan?'<span class="catatan-cell">'+esc(c.catatan)+'</span>':'')+'</td>'
         +'<td>'+esc(c.telp||'-')+'</td>'
         +'<td><b style="font-family:Menlo,monospace">'+esc(c.ssid||'-')+'</b><span class="sub">PW: '+esc(c.wifiPass||'-')+'</span><button class="icon-btn" title="Salin WiFi + Password" onclick="copyWifi(\''+c.id+'\')">📋</button></td>'
         +'<td>'+(pk?esc(pk.nama)+' <span class="sub" style="display:inline">· '+esc(pk.kecepatan)+'</span>':'-')+'</td>'
@@ -876,7 +878,7 @@ function formBackup(){
 
 function pickBackupFile(){const el=document.getElementById('bkFile');if(el)el.click()}
 
-const APP_VERSION='1.5.0';
+const APP_VERSION='1.6.0';
 function formMore(){
   openModal('<h3>⚙️ Pengaturan &amp; Data</h3>'
     +'<div class="more-list">'
