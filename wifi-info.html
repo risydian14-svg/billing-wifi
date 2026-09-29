@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cek WiFi</title>
+<style>
+  :root{
+    --primary:#4338ca;
+    --primary-light:#eef2ff;
+    --bg:#f1f5f9;
+    --card:#ffffff;
+    --text:#0f172a;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --radius:14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  .wrap{max-width:520px;margin:0 auto;padding:28px 18px 40px}
+  header{text-align:center;margin-bottom:24px}
+  header .ico{font-size:42px}
+  header h1{font-size:22px;margin-top:6px}
+  header p{font-size:13px;color:var(--muted);margin-top:4px}
+
+  .search{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 1px 3px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.05)}
+  .search label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:8px}
+  .search input{width:100%;font-family:inherit;font-size:15px;padding:12px 14px;border:1px solid var(--border);border-radius:11px;outline:none;transition:.15s}
+  .search input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(67,56,202,.12)}
+  .search small{display:block;font-size:11.5px;color:var(--muted);margin-top:8px}
+
+  .result{margin-top:18px}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:0 1px 3px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.05);margin-bottom:14px;animation:pop .18s ease}
+  @keyframes pop{from{transform:scale(.97);opacity:0}to{transform:scale(1);opacity:1}}
+  .card .name{font-size:15.5px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .card .name .badge{font-size:10.5px;font-weight:700;color:#9ca3af;background:#f1f5f9;padding:4px 10px;border-radius:999px}
+  .rowbox{background:#f8fafc;border:1px solid var(--border);border-radius:11px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .rowbox .lab{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+  .rowbox .val{font-family:Menlo,Consolas,monospace;font-size:15px;font-weight:600;word-break:break-all}
+  .rowbox .val.masked{letter-spacing:2px;color:var(--muted)}
+  .copy-btn{border:none;background:var(--primary-light);color:var(--primary);border-radius:9px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit}
+  .copy-btn:hover{filter:brightness(.96)}
+  .help{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+  .empty{padding:34px 18px;text-align:center;color:var(--muted);font-size:14px;line-height:1.6}
+  .empty span{font-size:30px;display:block;margin-bottom:8px}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:11px 20px;border-radius:11px;font-size:13.5px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:100;animation:slide .25s ease}
+  @keyframes slide{from{transform:translate(-50%,20px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="ico">🛜</div>
+    <h1>Cek WiFi</h1>
+    <p>Masukkan nama atau nomor HP untuk melihat WiFi</p>
+  </header>
+
+  <div class="search">
+    <label for="q">Cari Nama / No. HP</label>
+    <input id="q" type="search" placeholder="cth: Budi Santoso / 081234567890" autocomplete="off">
+    <small>Contoh: ASNET-Budi · password budi2025</small>
+  </div>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function normNum(s){return String(s||'').replace(/\D/g,'')}
+
+let last = [];
+
+function getData(){
+  try{return JSON.parse(localStorage.getItem('billingwifi_db'))||null}catch(e){return null}
+}
+
+function run(q){
+  const box=document.getElementById('result');
+  q=q.trim().toLowerCase();
+  const db=getData();
+  if(!db||!Array.isArray(db.pelanggan)){
+    box.innerHTML='<div class="empty"><span>🛜</span>Belum ada data.<br>Buka aplikasi admin (index.html) terlebih dahulu.</div>';
+    last=[];
+    return;
+  }
+  if(!q){
+    box.innerHTML='';
+    last=[];
+    return;
+  }
+  const qn=normNum(q);
+  const res=db.pelanggan.filter(c=>{
+    if(c.nama&&c.nama.toLowerCase().includes(q))return true;
+    if(qn&&normNum(c.telp).includes(qn))return true;
+    if(c.ssid&&c.ssid.toLowerCase().includes(q))return true;
+    return false;
+  });
+  last=res;
+  if(!res.length){
+    box.innerHTML='<div class="empty"><span>🔍</span>Tidak ditemukan.<br>Periksa kembali nama / nomor HP Anda.</div>';
+    return;
+  }
+  box.innerHTML=res.map(c=>{
+    const pass=(c.wifiPass||'').trim();
+    return '<div class="card">'
+      +'<div class="name"><span>'+esc(c.nama)+'</span>'+(c.status==='aktif'?'<span class="badge">Aktif</span>':'<span class="badge">Nonaktif</span>')+'</div>'
+      +'<div class="rowbox"><div><div class="lab">Nama WiFi (SSID)</div><div class="val">'+esc(c.ssid||'-')+'</div></div><button class="copy-btn" onclick="copyWifi(\''+c.id+'\',this)">⬇ Salin</button></div>'
+      +'<div class="rowbox"><div><div class="lab">Password</div><div class="val" id="pw-'+c.id+'">'+maskPass(pass)+'</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button class="copy-btn" onclick="togglePass(\''+c.id+'\')">👁</button><button class="copy-btn" onclick="copyPass(\''+c.id+'\',this)">⬇ Salin</button></div></div>'
+      +(c.ssid&&pass?'<p class="help">Cara: buka pengaturan WiFi di HP, pilih <b>'+esc(c.ssid)+'</b>, lalu masukkan password di atas.</p>':'')
+      +'</div>';
+  }).join('');
+}
+
+function getCust(id){return last.find(c=>c.id===id)}
+function score(c){return 'WiFi: '+(c.ssid||'-')+'\nPassword: '+(c.wifiPass||'-')}
+
+function maskPass(p){return p?'••••••••':'—'}
+
+function togglePass(id){
+  const c=getCust(id);
+  if(!c)return;
+  const el=document.getElementById('pw-'+id);
+  if(!el)return;
+  if(el.dataset.shown==='1'){
+    el.textContent=maskPass(c.wifiPass||'');
+    el.classList.add('masked');
+    el.dataset.shown='0';
+  }else{
+    el.textContent=c.wifiPass||'—';
+    el.classList.remove('masked');
+    el.dataset.shown='1';
+  }
+}
+
+function copyWifi(id,btn){const c=getCust(id);if(c)doCopy(score(c),btn)}
+function copyPass(id,btn){const c=getCust(id);if(c)doCopy(c.wifiPass||'',btn)}
+
+function doCopy(txt,btn){
+  const done=()=>{toast('Disalin ✓');if(btn){const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1200)}};
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(done).catch(()=>toast('Gagal menyalin'))}
+  else done();
+}
+
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(e=>e.remove());
+  const el=document.createElement('div');
+  el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),2000);
+}
+
+(function(){
+  const input=document.getElementById('q');
+  let t;
+  input.addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>run(e.target.value),150)});
+  input.addEventListener('search',e=>run(e.target.value));
+  run(input.value);
+})();
+</script>
+</body>
+</html>

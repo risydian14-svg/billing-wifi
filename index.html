@@ -107,6 +107,18 @@
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
   .confirm-text{font-size:14px;color:var(--text);line-height:1.55}
 
+  .bk-box{background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:14px}
+  .bk-box h4{font-size:13.5px;margin-bottom:8px}
+  .bk-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;color:var(--muted)}
+  .bk-row b{color:var(--text);font-weight:600}
+  .bk-ok{color:var(--success);font-weight:600} .bk-warn{color:var(--warning);font-weight:600}
+  .bk-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .file-drop{border:2px dashed var(--border);border-radius:11px;padding:18px;text-align:center;cursor:pointer;transition:.15s;margin-top:10px}
+  .file-drop:hover,.file-drop.over{border-color:var(--primary);background:var(--primary-light)}
+  .file-drop .ico{font-size:26px}
+  .file-drop .ft{font-size:13.5px;font-weight:600;margin-top:4px}
+  .file-drop .fs{font-size:11.5px;color:var(--muted);margin-top:2px}
+
   .receipt{font-family:"SF Mono",Menlo,monospace;font-size:12.5px;line-height:1.7}
   .receipt h4{text-align:center;font-size:15px;margin-bottom:2px}
   .receipt .rc-sub{text-align:center;color:var(--muted);font-size:11px;margin-bottom:12px}
@@ -144,7 +156,9 @@
       <button class="nav-item" data-page="riwayat" onclick="goPage('riwayat')"><span class="ico">💰</span><span class="txt">Riwayat Bayar</span></button>
     </nav>
     <div class="sidebar-footer">
+      <a class="reset-btn" href="wifi-info.html" style="color:#6ee7b7;display:block;text-align:center;text-decoration:none">🌐 Halaman Cek WiFi</a>
       <button class="reset-btn" onclick="formWaSetting()" style="color:#a5b4fc">⚙️ Setting WA Gateway</button>
+      <button class="reset-btn" onclick="formBackup()" style="color:#6ee7b7">💾 Backup &amp; Simpan Data</button>
       <button class="reset-btn" onclick="askConfirm('Hapus semua data dan kembalikan ke data contoh?', resetAll)">↺ Reset Data Contoh</button>
     </div>
   </aside>
@@ -229,17 +243,17 @@ function seed(){
     tagihan:[]
   };
   const c=[
-    ['Budi Santoso','Server Pusat','081234567890',p1,true,10],
-    ['Siti Rahayu','Server Timur','082198765432',p2,true,15],
-    ['Ahmad Fauzi','Server Pusat','085312345678',p1,true,5],
-    ['Dewi Lestari','Server Barat','081377788899',p3,true,25],
-    ['Rudi Hartono','Server Timur','085700112233',p2,false,20]
+    ['Budi Santoso','Server Pusat','081234567890',p1,true,10,'ASNET-Budi','budi2025'],
+    ['Siti Rahayu','Server Timur','082198765432',p2,true,15,'ASNET-Siti','siti@12345'],
+    ['Ahmad Fauzi','Server Pusat','085312345678',p1,true,5,'ASNET-Ahmad','ahmad2025'],
+    ['Dewi Lestari','Server Barat','081377788899',p3,true,25,'ASNET-Dewi','dewi@2025'],
+    ['Rudi Hartono','Server Timur','085700112233',p2,false,20,'ASNET-Rudi','rudi2025']
   ];
   const prev=new Date();prev.setDate(1);prev.setMonth(prev.getMonth()-1);
   const prevPeriode=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');
   c.forEach((row,i)=>{
     const id=uid();
-    db.pelanggan.push({id,nama:row[0],alamat:row[1],telp:row[2],paketId:row[3],status:row[4]?'aktif':'nonaktif',jatuhTempo:row[5],tglDaftar:new Date(Date.now()-((i+3)*86400000*30)).toISOString()});
+    db.pelanggan.push({id,nama:row[0],alamat:row[1],telp:row[2],paketId:row[3],status:row[4]?'aktif':'nonaktif',jatuhTempo:row[5],ssid:row[6],wifiPass:row[7],tglDaftar:new Date(Date.now()-((i+3)*86400000*30)).toISOString()});
     if(row[4]){
       db.tagihan.push({id:uid(),pelangganId:id,paketId:row[3],periode:prevPeriode,jumlah:getPaket(row[3]).harga,status:i<3?'lunas':'belum',tanggalBayar:i<3?new Date(prev.getFullYear(),prev.getMonth(),20+i).toISOString():null,jatuhTempo:dueDateFor(prevPeriode,row[5])});
     }
@@ -319,6 +333,15 @@ function statCard(ico,color,big,label){return '<div class="card stat-card"><div 
 function rpShort(n){return n>=1000000?'Rp'+(n/1000000).toFixed(1).replace('.0','')+'jt':n>=1000?'Rp'+Math.round(n/1000)+'rb':'Rp'+n}
 function periodeLabelFull(b){return b.label}
 
+function copyWifi(id){
+  const c=getPelanggan(id);
+  if(!c)return toast('Pelanggan tidak ditemukan');
+  const txt='WiFi: '+(c.ssid||'-')+'\nPassword: '+(c.wifiPass||'-');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(txt).then(()=>toast('WiFi & password disalin ✓')).catch(()=>toast('Gagal menyalin ke clipboard'));
+  }else toast('Salin manual: '+txt);
+}
+
 renders.pelanggan=function(){
   if(!db.pelanggan.length){
     document.getElementById('page-pelanggan').innerHTML='<div class="panel"><div class="empty"><span>👥</span>Belum ada pelanggan.<br>Klik "Tambah Pelanggan" untuk memulai.</div></div>';
@@ -346,6 +369,7 @@ renders.pelanggan=function(){
       }
       return '<tr><td><b>'+esc(c.nama)+'</b></td>'
         +'<td>'+esc(c.telp||'-')+'</td>'
+        +'<td><b style="font-family:Menlo,monospace">'+esc(c.ssid||'-')+'</b><span class="sub">PW: '+esc(c.wifiPass||'-')+'</span><button class="icon-btn" title="Salin WiFi + Password" onclick="copyWifi(\''+c.id+'\')">📋</button></td>'
         +'<td>'+(pk?esc(pk.nama)+' <span class="sub" style="display:inline">· '+esc(pk.kecepatan)+'</span>':'-')+'</td>'
         +'<td>Tgl '+(c.jatuhTempo||'-')+'</td>'
         +'<td>'+billBadge+'</td>'
@@ -354,7 +378,7 @@ renders.pelanggan=function(){
     }).join('');
     html+='<div class="panel"><div class="panel-head"><h2>📡 '+esc(sv||'Tanpa Server')+'</h2>'
       +'<div style="font-size:12.5px;color:var(--muted)">'+list.length+' pelanggan · '+aktif+' aktif'+(tunggakan?' · <b style="color:var(--danger)">Tunggakan '+rp(tunggakan)+'</b>':'')+'</div></div>'
-      +'<div class="table-scroll"><table><thead><tr><th>Nama</th><th>No. HP</th><th>Paket</th><th>Jatuh Tempo</th><th>Tagihan Bulan Ini</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+      +'<div class="table-scroll"><table><thead><tr><th>Nama</th><th>No. HP</th><th>WiFi / Password</th><th>Paket</th><th>Jatuh Tempo</th><th>Tagihan Bulan Ini</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   });
   document.getElementById('page-pelanggan').innerHTML=html;
 };
@@ -468,6 +492,10 @@ function formPelanggan(id){
   openModal(`<h3>${c?'Edit Pelanggan':'Tambah Pelanggan'}</h3><form id="fPel">
     <div class="form-group"><label>Nama Lengkap *</label><input name="nama" required value="${esc(c?c.nama:'')}" placeholder="cth: Budi Santoso"></div>
     <div class="form-group"><label>No. HP / WhatsApp *</label><input name="telp" required value="${esc(c?c.telp:'')}" placeholder="cth: 081234567890"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>Nama WiFi (SSID)</label><input name="ssid" value="${esc(c?c.ssid:'')}" placeholder="cth: ASNET-01"></div>
+      <div class="form-group"><label>Password WiFi</label><input name="wifiPass" value="${esc(c?c.wifiPass:'')}" placeholder="cth: asnet2025"></div>
+    </div>
     <div class="form-group"><label>Server</label><input name="alamat" value="${esc(c?c.alamat:'')}" placeholder="Nama server / lokasi"></div>
     <div class="form-group"><label>Paket</label><select name="paketId">${opts}</select></div>
     <div class="form-group"><label>Jatuh Tempo (tanggal tiap bulan)</label><input name="jatuhTempo" type="number" min="1" max="31" required value="${c?c.jatuhTempo:15}"></div>
@@ -476,7 +504,7 @@ function formPelanggan(id){
   document.getElementById('fPel').addEventListener('submit',e=>{
     e.preventDefault();
     const f=new FormData(e.target);
-    const data={nama:f.get('nama').trim(),telp:f.get('telp').trim(),alamat:f.get('alamat').trim(),paketId:f.get('paketId'),jatuhTempo:Math.min(31,Math.max(1,+f.get('jatuhTempo')||15)),status:f.get('status')};
+    const data={nama:f.get('nama').trim(),telp:f.get('telp').trim(),alamat:f.get('alamat').trim(),paketId:f.get('paketId'),jatuhTempo:Math.min(31,Math.max(1,+f.get('jatuhTempo')||15)),status:f.get('status'),ssid:f.get('ssid').trim(),wifiPass:f.get('wifiPass').trim()};
     if(c){
       const lama=c.jatuhTempo;
       Object.assign(c,data);
@@ -723,6 +751,89 @@ function exportCsv(){
   toast('CSV berhasil diunduh');
 }
 
+const BACKUP_META='billingwifi_backup_info';
+function getBackupMeta(){try{return JSON.parse(localStorage.getItem(BACKUP_META))||{}}catch(e){return{}}}
+function setBackupMeta(m){localStorage.setItem(BACKUP_META,JSON.stringify(m))}
+function dbBytes(){return new Blob([JSON.stringify(db)]).size}
+function fmtBytes(b){return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(2)+' MB'}
+
+function formBackup(){
+  const meta=getBackupMeta();
+  const lunas=db.tagihan.filter(t=>t.status==='lunas').length;
+  const belum=db.tagihan.filter(t=>t.status==='belum').length;
+  const last=meta.at?new Date(meta.at):null;
+  const umur=last?Math.floor((Date.now()-last)/86400000):null;
+  const lastRow=last
+    ?'<div class="bk-row"><span>'+esc(last.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}))+'</span><b class="'+(umur>30?'bk-warn':'bk-ok')+'">'+(umur===0?'Hari ini':umur+' hari lalu')+'</b></div>'
+    :'<div class="bk-row"><span>Belum pernah dibackup</span><b class="bk-warn">—</b></div>';
+  openModal('<h3>💾 Backup &amp; Simpan Data</h3>'
+    +'<div class="bk-box"><h4>Data saat ini</h4>'
+    +'<div class="bk-row"><span>Pelanggan</span><b>'+db.pelanggan.length+' orang</b></div>'
+    +'<div class="bk-row"><span>Paket</span><b>'+db.paket.length+' paket</b></div>'
+    +'<div class="bk-row"><span>Tagihan</span><b>'+db.tagihan.length+' <small>('+lunas+' lunas, '+belum+' belum)</small></b></div>'
+    +'<div class="bk-row"><span>Ukuran</span><b>'+fmtBytes(dbBytes())+'</b></div></div>'
+    +'<div class="bk-box"><h4>Backup terakhir</h4>'+lastRow
+    +(meta.count?'<div class="bk-row"><span>Jumlah file diunduh</span><b>'+meta.count+'×</b></div>':'')
+    +'</div>'
+    +'<div class="bk-actions">'
+    +'<button class="btn btn-primary" onclick="exportBackup()">⬇ Unduh Backup</button>'
+    +'<button class="btn btn-outline" onclick="pickBackupFile()">⬆ Pulihkan Backup</button></div>'
+    +'<div class="file-drop" id="bkDrop" onclick="pickBackupFile()">'
+    +'<div class="ico">📁</div><div class="ft">Pilih file backup (.json)</div>'
+    +'<div class="fs">atau tarik &amp; letakkan file di sini</div></div>'
+    +'<input type="file" id="bkFile" accept="application/json,.json" class="hidden" onchange="importBackup(this)">'
+    +'<p class="hint">⚠️ Data tersimpan di browser ini saja. Unduh backup secara rutin — file juga berisi token WA Gateway, jadi simpan sebagai file privat.</p>'
+    +'<div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Tutup</button></div>');
+  const drop=document.getElementById('bkDrop');
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+  drop.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)readBackupFile(f)});
+}
+
+function pickBackupFile(){const el=document.getElementById('bkFile');if(el)el.click()}
+
+function exportBackup(){
+  const payload={app:'billingwifi',version:1,exportedAt:new Date().toISOString(),data:db,wa:getWaCfg()};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='backup-billingwifi-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  const m=getBackupMeta();
+  setBackupMeta({at:new Date().toISOString(),count:(m.count||0)+1,file:a.download});
+  closeModal();
+  toast('Backup berhasil diunduh ✓');
+}
+
+function importBackup(el){const f=el.files&&el.files[0];if(f)readBackupFile(f);el.value=''}
+
+function readBackupFile(file){
+  if(!/\.json$/i.test(file.name))return toast('File harus berekstensi .json');
+  const fr=new FileReader();
+  fr.onload=()=>{
+    let obj;
+    try{obj=JSON.parse(fr.result)}catch(e){return toast('File JSON tidak valid atau rusak')}
+    const data=obj&&obj.data?obj.data:obj;
+    if(!data||!Array.isArray(data.paket)||!Array.isArray(data.pelanggan)||!Array.isArray(data.tagihan))
+      return toast('Format backup tidak dikenali');
+    const tgl=obj.exportedAt?new Date(obj.exportedAt):null;
+    const info=tgl&&!isNaN(tgl)
+      ?'<br><br>🕐 Dibuat: <b>'+esc(tgl.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}))+'</b>':'';
+    askConfirm('Pulihkan data dari file <b>'+esc(file.name)+'</b>?'
+      +'<br><br>📁 Berisi <b>'+data.pelanggan.length+'</b> pelanggan, <b>'+data.paket.length+'</b> paket, <b>'+data.tagihan.length+'</b> tagihan.'+info
+      +'<br><br>⚠️ <b>Data saat ini akan diganti seluruhnya.</b>',()=>{
+        db={paket:data.paket,pelanggan:data.pelanggan,tagihan:data.tagihan};
+        if(obj.wa&&obj.wa.token)setWaCfg(obj.wa);
+        normalizeDb();
+        save();closeModal();goPage(currentPage);
+        toast('Data berhasil dipulihkan ✓');
+      });
+  };
+  fr.readAsText(file);
+}
+
 function autoGenerate(){
   const cp=currentPeriode();
   const aktif=db.pelanggan.filter(c=>c.status==='aktif');
@@ -740,17 +851,25 @@ function autoGenerate(){
   }
 }
 
-window.addEventListener('DOMContentLoaded',()=>{
-  const raw=localStorage.getItem('billingwifi_db');
-  if(raw){try{db=JSON.parse(raw)}catch(e){db=null}}
-  if(!db||!db.paket)seed();
-  db.pelanggan.forEach(c=>{if(c.jatuhTempo==null)c.jatuhTempo=15});
+function normalizeDb(){
+  db.pelanggan.forEach((c,i)=>{
+    if(c.jatuhTempo==null)c.jatuhTempo=15;
+    if(c.ssid==null)c.ssid='ASNET-'+(i+1);
+    if(c.wifiPass==null)c.wifiPass='wifi'+String(i+1);
+  });
   db.tagihan.forEach(t=>{
     if(t.jatuhTempo==null){
       const c=getPelanggan(t.pelangganId);
       if(c)t.jatuhTempo=dueDateFor(t.periode,c.jatuhTempo);
     }
   });
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const raw=localStorage.getItem('billingwifi_db');
+  if(raw){try{db=JSON.parse(raw)}catch(e){db=null}}
+  if(!db||!db.paket)seed();
+  normalizeDb();
   save();
   autoGenerate();
   goPage('dashboard');
