@@ -141,6 +141,8 @@
   .more-item small{display:block;font-weight:400;font-size:11.5px;color:var(--muted);margin-top:1px}
   .ver-line{text-align:center;font-size:11px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
   .ver-line b{color:var(--primary)}
+  .note-btn{margin-left:4px;font-size:13px}
+  .note-box{background:var(--warning-light);border:1px solid #fde68a;border-radius:11px;padding:14px;font-size:13.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
 
   @media(max-width:900px){
     .sidebar{width:64px}
@@ -286,13 +288,14 @@ function toast(msg){
 
 function goPage(page){
   currentPage=page;
+  if(page!=='pelanggan')pelQ='';
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
   document.querySelectorAll('main > section').forEach(s=>s.classList.add('hidden'));
   document.getElementById('page-'+page).classList.remove('hidden');
   document.getElementById('pageTitle').textContent=PAGE_TITLES[page][0];
   document.getElementById('pageSub').textContent=PAGE_TITLES[page][1];
   const acts=document.getElementById('topActions');acts.innerHTML='';
-  if(page==='pelanggan')acts.innerHTML='<button class="btn btn-outline" style="color:var(--danger)" onclick="delAllPelanggan()">🗑 Hapus Semua</button><button class="btn btn-primary" onclick="formPelanggan()">+ Tambah Pelanggan</button>';
+  if(page==='pelanggan')acts.innerHTML='<input type="search" placeholder="Cari nama atau catatan..." value="'+esc(pelQ)+'" oninput="pelSearch(this)" style="min-width:190px"><button class="btn btn-outline" style="color:var(--danger)" onclick="delAllPelanggan()">🗑 Hapus Semua</button><button class="btn btn-primary" onclick="formPelanggan()">+ Tambah Pelanggan</button>';
   if(page==='paket')acts.innerHTML='<button class="btn btn-primary" onclick="formPaket()">+ Tambah Paket</button>';
   if(page==='tagihan')acts.innerHTML='<button class="btn btn-wa" onclick="sendMassal()">💬 Kirim Pengingat Massal</button><button class="btn btn-outline" onclick="formTagihanSatuan()">+ Tagihan Satuan</button><button class="btn btn-primary" onclick="formGenerate()">⚡ Generate Tagihan Massal</button>';
   renders[page]();
@@ -346,6 +349,15 @@ function statCard(ico,color,big,label){return '<div class="card stat-card"><div 
 function rpShort(n){return n>=1000000?'Rp'+(n/1000000).toFixed(1).replace('.0','')+'jt':n>=1000?'Rp'+Math.round(n/1000)+'rb':'Rp'+n}
 function periodeLabelFull(b){return b.label}
 
+function showCatatan(id){
+  const c=getPelanggan(id);
+  if(!c)return toast('Pelanggan tidak ditemukan');
+  openModal('<h3>📝 Catatan — '+esc(c.nama)+'</h3>'
+    +'<div class="note-box">'+esc(c.catatan||'Belum ada catatan.')+'</div>'
+    +'<div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Tutup</button>'
+    +'<button class="btn btn-primary" onclick="closeModal();formPelanggan(\''+c.id+'\')">✏️ Ubah</button></div>');
+}
+
 function copyWifi(id){
   const c=getPelanggan(id);
   if(!c)return toast('Pelanggan tidak ditemukan');
@@ -355,15 +367,25 @@ function copyWifi(id){
   }else toast('Salin manual: '+txt);
 }
 
+let pelQ='';
+function pelSearch(el){pelQ=el.value;renders.pelanggan()}
+
 renders.pelanggan=function(){
   if(!db.pelanggan.length){
     document.getElementById('page-pelanggan').innerHTML='<div class="panel"><div class="empty"><span>👥</span>Belum ada pelanggan.<br>Klik "Tambah Pelanggan" untuk memulai.</div></div>';
     return;
   }
-  const servers=[...new Set(db.pelanggan.map(c=>c.alamat||''))].sort((a,b)=>a===''?1:(b===''?-1:a.localeCompare(b)));
+  const q=pelQ.trim().toLowerCase();
+  const semua=db.pelanggan;
+  const cocok=q?semua.filter(c=>(c.nama||'').toLowerCase().includes(q)||(c.catatan||'').toLowerCase().includes(q)||(c.telp||'').includes(q)||(c.ssid||'').toLowerCase().includes(q)):semua;
+  if(q&&!cocok.length){
+    document.getElementById('page-pelanggan').innerHTML='<div class="panel"><div class="empty"><span>🔍</span>Tidak ada pelanggan yang cocok dengan "'+esc(pelQ)+'".</div></div>';
+    return;
+  }
+  const servers=[...new Set(cocok.map(c=>c.alamat||''))].sort((a,b)=>a===''?1:(b===''?-1:a.localeCompare(b)));
   let html='';
   servers.forEach(sv=>{
-    const list=db.pelanggan.filter(c=>(c.alamat||'')===sv);
+    const list=cocok.filter(c=>(c.alamat||'')===sv);
     const aktif=list.filter(c=>c.status==='aktif').length;
     const tunggakan=db.tagihan.reduce((a,t)=>{
       if(t.status!=='belum')return a;
@@ -380,7 +402,7 @@ renders.pelanggan=function(){
         else if(isOverdue(bill))billBadge='<span class="badge badge-belum">Terlambat</span>';
         else billBadge='<span class="badge badge-tempo">Belum Bayar</span>';
       }
-      return '<tr><td><b>'+esc(c.nama)+'</b></td>'
+      return '<tr><td><b>'+esc(c.nama)+'</b>'+(c.catatan?'<button class="icon-btn note-btn" title="Lihat catatan" onclick="showCatatan(\''+c.id+'\')">📝</button>':'')+'</td>'
         +'<td>'+esc(c.telp||'-')+'</td>'
         +'<td><b style="font-family:Menlo,monospace">'+esc(c.ssid||'-')+'</b><span class="sub">PW: '+esc(c.wifiPass||'-')+'</span><button class="icon-btn" title="Salin WiFi + Password" onclick="copyWifi(\''+c.id+'\')">📋</button></td>'
         +'<td>'+(pk?esc(pk.nama)+' <span class="sub" style="display:inline">· '+esc(pk.kecepatan)+'</span>':'-')+'</td>'
@@ -513,11 +535,12 @@ function formPelanggan(id){
     <div class="form-group"><label>Paket</label><select name="paketId">${opts}</select></div>
     <div class="form-group"><label>Jatuh Tempo (tanggal tiap bulan)</label><input name="jatuhTempo" type="number" min="1" max="31" required value="${c?c.jatuhTempo:15}"></div>
     <div class="form-group"><label>Status</label><select name="status"><option value="aktif"${!c||c.status==='aktif'?' selected':''}>Aktif</option><option value="nonaktif"${c&&c.status==='nonaktif'?' selected':''}>Nonaktif</option></select></div>
+    <div class="form-group"><label>Catatan</label><textarea name="catatan" rows="3" placeholder="cth: Sering telat bayar, pindah ke gg. Melati, minta upgrade 30 Mbps">${esc(c?c.catatan:'')}</textarea><small class="hint">Catatan internal, tidak dilihat pelanggan.</small></div>
     <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Batal</button><button class="btn btn-primary">${c?'Simpan':'Tambah'}</button></div></form>`);
   document.getElementById('fPel').addEventListener('submit',e=>{
     e.preventDefault();
     const f=new FormData(e.target);
-    const data={nama:f.get('nama').trim(),telp:f.get('telp').trim(),alamat:f.get('alamat').trim(),paketId:f.get('paketId'),jatuhTempo:Math.min(31,Math.max(1,+f.get('jatuhTempo')||15)),status:f.get('status'),ssid:f.get('ssid').trim(),wifiPass:f.get('wifiPass').trim()};
+    const data={nama:f.get('nama').trim(),telp:f.get('telp').trim(),alamat:f.get('alamat').trim(),paketId:f.get('paketId'),jatuhTempo:Math.min(31,Math.max(1,+f.get('jatuhTempo')||15)),status:f.get('status'),ssid:f.get('ssid').trim(),wifiPass:f.get('wifiPass').trim(),catatan:f.get('catatan').trim()};
     if(c){
       const lama=c.jatuhTempo;
       Object.assign(c,data);
@@ -805,7 +828,7 @@ function formBackup(){
 
 function pickBackupFile(){const el=document.getElementById('bkFile');if(el)el.click()}
 
-const APP_VERSION='1.2.0';
+const APP_VERSION='1.3.0';
 function formMore(){
   openModal('<h3>⚙️ Pengaturan &amp; Data</h3>'
     +'<div class="more-list">'
