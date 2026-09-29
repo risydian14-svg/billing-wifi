@@ -143,6 +143,11 @@
   .ver-line b{color:var(--primary)}
   .note-btn{margin-left:4px;font-size:13px}
   .note-box{background:var(--warning-light);border:1px solid #fde68a;border-radius:11px;padding:14px;font-size:13.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+  .note-pop{position:fixed;z-index:150;max-width:270px;background:#111827;color:#fff;padding:11px 13px;border-radius:11px;font-size:12.5px;line-height:1.6;box-shadow:0 10px 30px rgba(0,0,0,.32);white-space:pre-wrap;word-break:break-word;animation:pop .15s ease}
+  .note-pop::after{content:'';position:absolute;left:var(--arrow,50%);bottom:-6px;margin-left:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:7px solid #111827}
+  .note-pop.up::after{bottom:auto;top:-6px;border-top:none;border-bottom:7px solid #111827}
+  .note-pop button{margin-top:9px;background:rgba(255,255,255,.16);border:none;color:#fff;font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:7px;cursor:pointer;font-family:inherit}
+  .note-pop button:hover{background:rgba(255,255,255,.28)}
 
   @media(max-width:900px){
     .sidebar{width:64px}
@@ -349,14 +354,35 @@ function statCard(ico,color,big,label){return '<div class="card stat-card"><div 
 function rpShort(n){return n>=1000000?'Rp'+(n/1000000).toFixed(1).replace('.0','')+'jt':n>=1000?'Rp'+Math.round(n/1000)+'rb':'Rp'+n}
 function periodeLabelFull(b){return b.label}
 
-function showCatatan(id){
+let notePop=null;
+function closeNote(){if(notePop){notePop.remove();notePop=null}}
+function toggleNote(id,btn,ev){
+  if(ev){ev.preventDefault();ev.stopPropagation()}
   const c=getPelanggan(id);
   if(!c)return toast('Pelanggan tidak ditemukan');
-  openModal('<h3>📝 Catatan — '+esc(c.nama)+'</h3>'
-    +'<div class="note-box">'+esc(c.catatan||'Belum ada catatan.')+'</div>'
-    +'<div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Tutup</button>'
-    +'<button class="btn btn-primary" onclick="closeModal();formPelanggan(\''+c.id+'\')">✏️ Ubah</button></div>');
+  if(notePop)return closeNote();
+  const el=document.createElement('div');
+  el.className='note-pop';
+  el.innerHTML=esc(c.catatan||'Belum ada catatan.')
+    +'<br><button onclick="event.stopPropagation();closeNote();formPelanggan(\''+id+'\')">✏️ Ubah catatan</button>';
+  el.addEventListener('click',e=>e.stopPropagation());
+  document.body.appendChild(el);
+  const r=btn.getBoundingClientRect();
+  const w=el.offsetWidth,h=el.offsetHeight;
+  const left=Math.max(8,Math.min(r.left+r.width/2-w/2,innerWidth-w-8));
+  const above=r.top-h-10;
+  const up=above>=8;
+  el.classList.toggle('up',!up);
+  el.style.left=left+'px';
+  el.style.top=(up?above:r.bottom+10)+'px';
+  el.style.setProperty('--arrow',Math.max(10,Math.min(r.left+r.width/2-left,el.offsetWidth-10))+'px');
+  notePop=el;
 }
+
+document.addEventListener('click',closeNote);
+document.addEventListener('scroll',closeNote,true);
+window.addEventListener('resize',closeNote);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNote()});
 
 function copyWifi(id){
   const c=getPelanggan(id);
@@ -402,7 +428,7 @@ renders.pelanggan=function(){
         else if(isOverdue(bill))billBadge='<span class="badge badge-belum">Terlambat</span>';
         else billBadge='<span class="badge badge-tempo">Belum Bayar</span>';
       }
-      return '<tr><td><b>'+esc(c.nama)+'</b>'+(c.catatan?'<button class="icon-btn note-btn" title="Lihat catatan" onclick="showCatatan(\''+c.id+'\')">📝</button>':'')+'</td>'
+      return '<tr><td><b>'+esc(c.nama)+'</b>'+(c.catatan?'<button class="icon-btn note-btn" title="Lihat catatan" onclick="toggleNote(\''+c.id+'\',this,event)">📝</button>':'')+'</td>'
         +'<td>'+esc(c.telp||'-')+'</td>'
         +'<td><b style="font-family:Menlo,monospace">'+esc(c.ssid||'-')+'</b><span class="sub">PW: '+esc(c.wifiPass||'-')+'</span><button class="icon-btn" title="Salin WiFi + Password" onclick="copyWifi(\''+c.id+'\')">📋</button></td>'
         +'<td>'+(pk?esc(pk.nama)+' <span class="sub" style="display:inline">· '+esc(pk.kecepatan)+'</span>':'-')+'</td>'
@@ -828,7 +854,7 @@ function formBackup(){
 
 function pickBackupFile(){const el=document.getElementById('bkFile');if(el)el.click()}
 
-const APP_VERSION='1.3.0';
+const APP_VERSION='1.4.0';
 function formMore(){
   openModal('<h3>⚙️ Pengaturan &amp; Data</h3>'
     +'<div class="more-list">'
